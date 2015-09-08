@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Play Faking It on IRC using a bot written in Node.js",
   "main": "server.js",
-  "repository": "",
+  "repository": "https://github.com/Isogash/faking-it-on-irc",
   "author": "Adam Mitchell <isogash@gmail.com>",
   "dependencies": {
     "async": "~0.2.8"
