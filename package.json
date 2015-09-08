@@ -1,6 +1,6 @@
 {
-  "name": "faking-it-on-irc-node",
-  "version": "0.0.0",
+  "name": "faking-it-on-irc",
+  "version": "0.0.1",
   "description": "Play Faking It on IRC using a bot written in Node.js",
   "main": "server.js",
   "repository": "",
