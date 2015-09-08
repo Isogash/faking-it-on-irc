@@ -1,0 +1,12 @@
+{
+  "name": "faking-it-on-irc-node",
+  "version": "0.0.0",
+  "description": "Play Faking It on IRC using a bot written in Node.js",
+  "main": "server.js",
+  "repository": "",
+  "author": "Adam Mitchell <isogash@gmail.com>",
+  "dependencies": {
+    "async": "~0.2.8"
+    "irc": "~0.3.12"
+  }
+}
