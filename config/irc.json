@@ -1,0 +1,38 @@
+{
+  "settings": {
+    "admins": {
+      "user": "pass"
+    },
+    "general": {
+      "adminlock": false,
+      "nullshutdown": false,
+      "commandprefix": ".",
+      "minplayers": 3,
+      "majorityvote": true,
+      "timelimit": 300
+    }
+  },
+  "servers": {
+    "esper": {
+      "server": "irc.esper.net",
+      "nick": "FakeItBot",
+      "userName": "FakeItBot",
+      "realName": "Play 'Fake It' using this bot",
+      "port": 6667,
+      "debug": true,
+      "showErrors": true,
+      "autoRejoin": true,
+      "autoConnect": true,
+      "channels": [],
+      "secure": false,
+      "selfSigned": false,
+      "certExpired": false,
+      "floodProtection": false,
+      "floodProtectionDelay": 1000,
+      "sasl": false,
+      "stripColors": false,
+      "channelPrefixes": "&#",
+      "messageSplit": 512
+    }
+  }
+}
