@@ -1,10 +1,10 @@
-# Faking It on IRC #
+# Fake It on IRC #
 
-Based on the [app](https://play.google.com/store/apps/details?id=appinventor.ai_scottnicholson.FakingIt&hl=en_GB) of the same name. Currently in a very early state.
+Based on the [app](https://play.google.com/store/apps/details?id=appinventor.ai_scottnicholson.FakingIt&hl=en_GB).
 
 ## Installation ##
 
-To get the bot up and running simply navigate to this repository's root folder and run `npm install`. If everything goes smooth you can then run `node server.js` to start the bot. Keep in mind to configure the bot's settings in *server.js* beforehand.
+To get the IRC bot up and running simply navigate to this repository's root folder and run `npm install`. If everything goes smooth you can then run `node irc.js` to start the bot. Keep in mind to configure the bot's settings in *config/irc.json* beforehand. The HTTP server side of this project will come soon.
 
 ## License ##
 

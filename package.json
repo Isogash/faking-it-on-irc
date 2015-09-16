@@ -1,13 +1,13 @@
 {
-	"name": "faking-it-on-irc",
-	"version": "0.0.1",
-	"description": "Play Faking It on IRC using a bot written in Node.js",
-	"main": "server.js",
-	"repository": "https://github.com/Isogash/faking-it-on-irc",
-	"author": "Adam Mitchell <isogash@gmail.com>",
-	"license" : "MIT",
-	"dependencies": {
-		"async": "~0.2.8",
-		"irc": "~0.3.12"
-	}
+  "name": "fake-it",
+  "version": "0.0.3",
+  "description": "Play Fake It written in Node.JS",
+  "main": "game.js",
+  "repository": "https://github.com/Isogash/fake-it",
+  "author": "Adam Mitchell <isogash@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "async": "~0.2.8",
+    "irc": "~0.3.12",
+  }
 }
