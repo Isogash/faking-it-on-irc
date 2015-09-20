@@ -112,7 +112,7 @@ fakeit_irc.newBot = function(network) {
 									games[gamename].fireSilent(nick, command);
 
 								} else {
-									games[gamename].fireSilent(nick, command, arguments[2]);
+									games[gamename].fireSilent(nick, command, arguments.splice(2, arguments.length).join(" "));
 								}
 
 							} else {
@@ -170,10 +170,10 @@ fakeit_irc.addGame = function(network, channel) {
 
 			// Edit the help messages to work better with the IRC interface.
 			games[gamename].helpMessages = {
-				"idle": "Use 'play' to start a new game. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [channel] [command] [content].",
-				"lobby": "Use 'join' to enter the currently running game. If you are the host you can start and stop the game using the 'start' and 'stop' commands. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [channel] [command] [content].",
-				"warmup": "The game is currently waiting for the setter to chose his topic. If you are the setter, message the bot using the topic command and a topic (.topic [topic]). If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [channel] [command] [content].",
-				"playing": "To cast a vote for a given player use the 'vote' command. If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [channel] [command] [content]."
+				"idle": "Use 'fakeit' to start a new game. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
+				"lobby": "Use 'join' to enter the currently running game. If you are the host you can start and stop the game using the 'start' and 'stop' commands. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
+				"warmup": "The game is currently waiting for the setter to chose his topic. If you are the setter, message the bot using the topic command and a topic (/msg [Bot] " + prefix + "topic [#channel] [topic]). If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
+				"playing": "To cast a vote for a given player use the 'vote' command. If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content]."
 			}
 
 			// Main listener function. Receives IRC messages and converts them to possible commands.
@@ -192,7 +192,7 @@ fakeit_irc.addGame = function(network, channel) {
 				}
 			}
 
-			// Add the listeners.
+			// Add the game listener.
 			bots[network].addListener("message" + channel, channellisteners[gamename]);
 
 			// Logs errors in case any pop up.

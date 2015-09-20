@@ -86,7 +86,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 			"Fake It is a simple hidden role social deception game! Each round, " +
 			"one person is secretly chosen at random to choose a topic. When the " +
 			"topic is chosen, all of the other players will be told the topic except " +
-			"one chosen at random (who wasn\'t the topic setter.)\nThe players jobs " +
+			"one chosen at random (who wasn\'t the topic setter.)\nThe players' jobs " +
 			"are to find who it is who doesn\'t know the topic without letting them " +
 			"know what the topic is. Players have 5 minutes to do their detecting " +
 			"and cast their votes.\nIf a majority decision is made before the time " +
@@ -151,83 +151,92 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 
 	// Starts a new game after the topic setter has selected his topic.
 	game.begin = function(player, topic){
-		if(game.players[player].isSetter) {
-			if(topic == "") {
-				game.message(player, "Please enter a valid non empty topic for the game to begin!");
+		if(game.players[player]) {
+			if(game.players[player].isSetter) {
+				if(topic == "") {
+					game.message(player, "Please enter a valid non empty topic for the game to begin!");
 
-			} else {
-				game.gametopic = topic;
-				game.gamestate = "playing";
-		
-				var keys = Object.keys(game.players);
-				game.votemin = Math.floor(keys.length / 2) + 1;
-				game.fakerid = keys[Math.floor(Math.random() * (keys.length - 1))];
+				} else {
+					game.gametopic = topic;
+					game.gamestate = "playing";
+			
+					var keys = Object.keys(game.players);
+					game.votemin = Math.floor(keys.length / 2) + 1;
+					game.fakerid = keys[Math.floor(Math.random() * (keys.length - 1))];
 
-				if(game.players[game.fakerid].gametopic) game.fakerid = keys[keys.length - 1];
+					if(game.players[game.fakerid].isSetter) game.fakerid = keys[keys.length - 1];
 
-				game.players[game.fakerid].isFaker = true;
+					game.players[game.fakerid].isFaker = true;
 
-				game.announce("The topic has been set, you have " + mmss(game.timelimit) + " to figure out who's faking it!");
+					game.announce("The topic has been set, you have " + mmss(game.timelimit) + " to figure out who's faking it!");
 
-				for(var id in game.players) {
-					game.players[id].voted = false;
-					game.players[id].votes = 0;
+					for(var id in game.players) {
+						game.players[id].voted = false;
+						game.players[id].votes = 0;
 
-					if(game.players[id].isFaker) {
-						game.message(id, "The topic is a secret from you. Don't let the others find out! Good luck!");
-					} else {
-						game.message(id, "The topic is: " + game.gametopic);
+						if(game.players[id].isFaker) {
+							game.message(id, "The topic is a secret from you. Don't let the others find out! Good luck!");
+						} else {
+							game.message(id, "The topic is: " + game.gametopic);
+						}
 					}
+
+					game.announce("You can always switch your vote before the time is up!");
+					game.timeleft = game.timelimit;
+					game.timer = setInterval(game.tick, 1000);
 				}
 
-				game.announce("You can always switch your vote before the time is up!");
-				game.timeleft = game.timelimit;
-				game.timer = setInterval(game.tick, 1000);
+			} else {
+				game.message(player, "Sorry you are not the setter. Just sit tight!");
 			}
 
 		} else {
-			game.message(player, "Sorry you are not the setter. Just sit tight!");
+			game.message(player, "You are not part of the game! You can join in the next round.");
 		}
 	}
 
 	// Handler for the vote command.
 	game.vote = function(player, vote) {
-		if(!vote) {
-			game.message(player, "Please specify a player!");
-			return
-		}
+		if(game.players[player]) {
+			if(!vote) {
+				game.message(player, "Please specify a player!");
+				return
+			}
 
-		if(!game.players[vote]) {
-			game.message(player, "That player does not exist!");
-			return
-		}
+			if(!game.players[vote]) {
+				game.message(player, "That player does not exist!");
+				return
+			}
 
-		if(player === vote) {
-			game.message(player, "You can't vote for yourself!");
-			return
-		}
+			if(player === vote) {
+				game.message(player, "You can't vote for yourself!");
+				return
+			}
 
-		if(!game.players[player].voted) {
-			game.players[player].voted = vote;
-			game.players[vote].votes++;
-
-		} else {
-			if (game.players[player].voted != vote) {
-				game.players[game.players[player].voted].votes--;
+			if(!game.players[player].voted) {
 				game.players[player].voted = vote;
 				game.players[vote].votes++;
 
 			} else {
-				game.message(player, "You already voted for that user...");
+				if (game.players[player].voted != vote) {
+					game.players[game.players[player].voted].votes--;
+					game.players[player].voted = vote;
+					game.players[vote].votes++;
+
+				} else {
+					game.message(player, "You already voted for that user...");
+				}
 			}
-		}
 
-		if(game.players[vote].votes < game.votemin) {
-			game.announce(vote + " received a vote from " + player + " and now has a total of " + game.players[vote].votes + " votes. " + (game.votemin - game.players[vote].votes) + " more are required for a majority.");
+			if(game.players[vote].votes < game.votemin) {
+				game.announce(vote + " received a vote from " + player + " and now has a total of " + game.players[vote].votes + " votes. " + (game.votemin - game.players[vote].votes) + " more are required for a majority.");
 
+			} else {
+				game.announce("STOP! " + player + " has voted, creating a majority of " + game.votemin + " players to have made their decision, and they were...");
+				game.conclusion(vote);
+			}
 		} else {
-			game.announce("STOP! " + player + " has voted, creating a majority of " + game.votemin + " players to have made their decision, and they were...");
-			game.conclusion(vote);
+			game.message(player, "You are not part of the game! You can join in the next round.");
 		}
 	}
 
@@ -338,7 +347,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 	// Commands with the '&' can only be called outside of the main chat.
 	game.logictree = {
 		"idle": {
-			"play": game.launch,
+			"fakeit": game.launch,
 			"rules": game.showRules,
 			"help": game.showHelp,
 		},
