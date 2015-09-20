@@ -36,6 +36,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 	game.gamestate = "idle";
 	game.timeleft = 0;
 	game.timer = 0;
+	game.votemin = 0;
 
 	// Players and game roles.
 	game.players = {};
@@ -44,7 +45,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 	game.fakerid = "";
 
 	// Custom game options.
-	game.votemin = 0;
+	game.minplayers = 3;
 	game.timelimit = 300;
 	game.majority = true;
 
@@ -115,7 +116,13 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 	game.join = function(player) {
 		if(!game.players[player]) {
 			game.players[player] = {};
-			game.message(player, "You have joined this game! Waiting for " + game.hostid + " to start.");
+
+			if(game.players.length >= game.minplayers) {
+				game.announce(player + " has joined the game! Waiting for " + game.hostid + " to start.");
+
+			} else {
+				game.announce(player + " has joined the game! Waiting for " + (game.minplayers - (game.players.length % game.minplayers)) + " more player(s).");
+			}
 
 		} else {
 			if(game.players[player].isHost) {
@@ -127,11 +134,48 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 		}
 	}
 
+	game.leave = function(player) {
+		if(game.players[player]) {
+			if(game.players[player].isHost) {
+				game.announce(player + ", who was the host, has left the game. Since the host is no longer present the game will now reset.");
+				game.reset();
+
+			} else if(game.players[player].isFaker) {
+				game.announce(player + ", who was the faker, has left the game. Since the faker has been revealed the game will now reset.");
+				game.reset();
+
+			} else if(game.players[player].isSetter) {
+				delete game.players[player];
+
+				game.announce(player + ", who was the topic setter, has left the game.");
+
+				if(game.players.length >= game.minplayers) {
+					var keys = Object.keys(game.players);
+					game.setterid = keys[Math.floor(Math.random() * keys.length)];
+					game.players[game.setterid].isSetter = true;
+
+					game.announce("A new topic setter has been chosen!");
+					game.message(game.setterid, "You are the topic setter!");
+				}
+
+			} else {
+				delete game.players[player];
+
+				game.announce(player + " has left the game.");
+			}
+
+			if(game.players.length < game.minplayers) {
+				game.announce("There aren't enough players to continue the game. As of such the game will now be reset.");
+				game.reset();
+			}
+		}
+	}
+
 	// Warmup section. A game topic setter is chosen.
 	game.warmup = function(player) {
 		if(game.players[player].isHost) {
-			if(Object.keys(game.players).length < 3) {
-				game.message(player, "Make sure you have at least 3 players!");
+			if(Object.keys(game.players).length < game.minplayers) {
+				game.message(player, "Make sure you have at least " + game.minplayers + " players!");
 				return
 			}
 
@@ -247,8 +291,6 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 			game.announce("The game has been reset by the host, " + game.hostid + ".");
 			game.reset();
 
-		} else {
-			game.message(player, "Sorry you are not allowed to execute this command.");
 		}
 	}
 
@@ -354,6 +396,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 
 		"lobby": {
 			"join": game.join,
+			"leave": game.leave,
 			"start": game.warmup,
 			"stop": game.playerReset,
 			"rules": game.showRules,
@@ -361,6 +404,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 		},
 
 		"warmup": {
+			"leave": game.leave,
 			"&topic": game.begin,
 			"rules": game.showRules,
 			"stop": game.playerReset,
@@ -368,6 +412,7 @@ fakeit_game.Game = function(pubfunc, pvtfunc) {
 		},
 
 		"playing": {
+			"leave": game.leave,
 			"vote": game.vote,
 			"stop": game.playerReset,
 			"rules": game.showRules,

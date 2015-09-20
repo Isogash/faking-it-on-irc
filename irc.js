@@ -15,9 +15,9 @@ var prefix = config.settings.general.commandprefix;
 var admins	= []; // Stores verified admins.
 var bots 	= []; // Stores bot information as well as gamestate specific variables per connection.
 var games 	= []; // Stores the currently instantiated games.
+var users	= []; // Stores the user connections on a per channel basis.
 
 // Retains listener functions so that they can be removed later on.
-var messagelisteners = []; // Store per network listener functions for incoming messages.
 var channellisteners = []; // Store per network and channel listener functions for public interaction.
 
 var fakeit_irc = {}; // Main IRC interface global. Is passed on when using 'require'.
@@ -33,7 +33,7 @@ fakeit_irc.newBot = function(network) {
 		if(!bots[network]) {
 			
 			// Create the direct message listener and store it.
-			messagelisteners[network] = function(nick, text) {
+			function messagehandler(nick, text) {
 				var arguments = text.split(" "); // Split the string to compose message arguments.
 
 				if(arguments[0][0] == prefix) {
@@ -85,7 +85,8 @@ fakeit_irc.newBot = function(network) {
 								}
 
 							} else {
-								bots[network].notice(nick, "Please verify your identity! Example: " + prefix + "admin verify [password]");
+								if(config.settings.general.adminlock === true) bots[network].notice(nick, "Please verify your identity! Example: " + prefix + "admin verify [password]");
+								else bots[network].notice(nick, "Please verify your identity! Example: " + prefix + "admin verify [username] [password]");
 							}
 
 						} else {
@@ -103,34 +104,73 @@ fakeit_irc.newBot = function(network) {
 						}
 
 					} else {
-						// Direct game messaging.
-						if(arguments[1]) {
-							var gamename = network + "_" + arguments[1];
+						// Check to see if the player is in multiple games. If not, find out which game is he in.
+						var multichannel = false;
+						var playerchannel = "";
 
-							if(games[gamename]) {
-								if(!arguments[2]) {
-									games[gamename].fireSilent(nick, command);
+						if(Object.keys(games).length > 0) {
+							var count = 0;
+
+							for(channelname in users) {
+								playerchannel = channelname;
+
+								if(users[channelname][nick] !== null) {
+									count++;
+								}
+
+								if(count > 1) {
+									multichannel = true;
+									break;
+								}
+							}
+						}
+
+						// Handle messaging when the player is in multiple games.
+						if(multichannel === true) {
+							if(arguments[1]) {
+								var gamename = network + "_" + arguments[1];
+
+								if(games[gamename]) {
+									if(!arguments[2]) {
+										games[gamename].fireSilent(nick, command);
+
+									} else {
+										games[gamename].fireSilent(nick, command, arguments.splice(2, arguments.length).join(" "));
+									}
 
 								} else {
-									games[gamename].fireSilent(nick, command, arguments.splice(2, arguments.length).join(" "));
+									bots[network].notice(nick, "The channel of " + arguments[1] + " does not have a bot connection.");
 								}
 
 							} else {
-								bots[network].notice(nick, "The channel of " + arguments[1] + " does not have a bot connection.");
+								bots[network].notice(nick, "You are in multiple game channels. Please add the channel you wish to message after your command. Example: " + prefix + "command [#channel] [content]");
 							}
 
+						// Handle direct messaging without adding the channel.
 						} else {
-							bots[network].notice(nick, "Please add the channel you wish to message after your command. Example: " + prefix + "command [#channel] [content]");
-						}		
+							var gamename = network + "_" + playerchannel;
+
+							if(!arguments[1]) {
+								games[gamename].fireSilent(nick, command);
+
+							} else {
+								games[gamename].fireSilent(nick, command, arguments.splice(1, arguments.length).join(" "));
+							}
+						}
 					}
 				}
+			}
+
+			function namehandler(channel, nicks) {
+				users[channel] = nicks;
 			}
 
 			// Create the new bot and store it.
 			bots[network] = new irc.Client(config.servers[network].server, config.servers[network].nick, config.servers[network]);
 
 			// Event listener for admin messages. This handles all incoming messages on the newly attached network.
-			bots[network].addListener("pm", messagelisteners[network]);
+			bots[network].addListener("pm", messagehandler);
+			bots[network].addListener("names", namehandler);
 
 		} else {
 			console.log(network + " was not found in the configuration file and will be skipped.\nPlease check if it's been added before trying to connect!");
@@ -170,15 +210,15 @@ fakeit_irc.addGame = function(network, channel) {
 
 			// Edit the help messages to work better with the IRC interface.
 			games[gamename].helpMessages = {
-				"idle": "Use 'fakeit' to start a new game. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
-				"lobby": "Use 'join' to enter the currently running game. If you are the host you can start and stop the game using the 'start' and 'stop' commands. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
-				"warmup": "The game is currently waiting for the setter to chose his topic. If you are the setter, message the bot using the topic command and a topic (/msg [Bot] " + prefix + "topic [#channel] [topic]). If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content].",
-				"playing": "To cast a vote for a given player use the 'vote' command. If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content]."
+				"idle": "Use 'fakeit' to start a new game. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content]. The channel argument is only required if you are in multiple games.",
+				"lobby": "Use 'join' to enter the currently running game. You can leave at any time using 'leave'. If you are the host you can start and stop the game using the 'start' and 'stop' commands. You can view the rules at any point using 'rules'. All commands can aso be sent directly to the bot using /msg [bot] [command] [#channel] [content]. The channel argument is only required if you are in multiple games.",
+				"warmup": "The game is currently waiting for the setter to chose his topic. You can leave at any time using 'leave'. If you are the setter, message the bot using the topic command and a topic (/msg [Bot] " + prefix + "topic [#channel] [topic]). If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content]. The channel argument is only required if you are in multiple games.",
+				"playing": "To cast a vote for a given player use the 'vote' command. You can leave at any time using 'leave'. If you are the host you can stop the game using the 'stop' command. You can view the rules at any point using 'rules'. All commands can also be sent directly to the bot using /msg [bot] [command] [#channel] [content]. The channel argument is only required if you are in multiple games."
 			}
 
 			// Main listener function. Receives IRC messages and converts them to possible commands.
 			// This needs to be converted to a per channel basis so that games don't intersect.
-			channellisteners[gamename] = function(nick, text) {
+			channellisteners[gamename + "_message"] = function(nick, text) {
 				var arguments = text.split(" "); // Split the string to compose message arguments.
 
 				if(arguments[0][0] == prefix) {
@@ -192,8 +232,16 @@ fakeit_irc.addGame = function(network, channel) {
 				}
 			}
 
-			// Add the game listener.
-			bots[network].addListener("message" + channel, channellisteners[gamename]);
+			// Handle players disconnecting from the channel. This is important when for instance a host leaves.
+			channellisteners[gamename + "_part"] = function(nick, text) {
+				if(games[gamename].players[nick]) {
+					games[gamename].leave(nick);
+				}
+			}
+
+			// Add the channel listeners.
+			bots[network].addListener("message" + channel, channellisteners[gamename + "_message"]);
+			bots[network].addListener("part" + channel, channellisteners[gamename + "_part"]);
 
 			// Logs errors in case any pop up.
 			bots[network].addListener("error", function(text) {
@@ -211,11 +259,13 @@ fakeit_irc.addGame = function(network, channel) {
 // Stop a game. Also disconnects the bot from the given channel.
 fakeit_irc.stopGame = function(network, channel) {
 	var gamename = network + "_" + channel;
+
 	if(games[gamename]) {
 		bots[network].part(channel);
 
 		// Remove the event listeners.
-		bots[network].removeListener("message" + channel, channellisteners[gamename]);
+		bots[network].removeListener("message" + channel, channellisteners[gamename + "_message"]);
+		bots[network].removeListener("part" + channel, channellisteners[gamename + "_part"]);
 
 		// Reset the game as a precaution to avoid any false data being written.
 		games[gamename].reset();
